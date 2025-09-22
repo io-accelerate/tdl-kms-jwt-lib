@@ -56,6 +56,8 @@ class End2EndTest {
             GenerateTokenApp.main(params);
 
             String jwtToken = getTokenFromStdout(outContent.toString());
+            System.setOut(originalOut);
+            
             System.out.println("jwt: " + jwtToken);
 
             KMSDecrypt kmsDecrypt = new KMSDecrypt(KMS_CLIENT, Collections.singleton(TEST_AWS_KEY_ARN));

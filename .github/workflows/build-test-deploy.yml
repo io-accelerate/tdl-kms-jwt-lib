@@ -1,0 +1,118 @@
+name: Build Test Deploy
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      # ~~~~~~~~~~~~~ Start minio ~~~~~~~~~~~~~
+      - name: Launch MinIO
+        run: |
+          docker run -d -p 9000:9000 --rm \
+            -e "MINIO_ROOT_USER=minio_access_key" \
+            -e "MINIO_ROOT_PASSWORD=minio_secret_key" \
+            minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+          
+          # Wait for HTTP to respond (old builds have no /minio/health/*)
+          for i in {1..60}; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/ || true)
+            if [ "$code" = "200" ] || [ "$code" = "403" ] || [ "$code" = "405" ]; then
+              echo "MinIO is up with HTTP $code"
+              break
+            fi
+            sleep 1
+          done
+
+      # ~~~~~~~~~~~~~ Java setup ~~~~~~~~~~~~~
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Display Java version
+        run: java --version
+      
+      # ~~~~~~~~~~~~~ Test ~~~~~~~~~~~~~
+      - name: Run gradle tests
+        run: ./gradlew test -i
+
+  package-as-shadow-jar:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      # ~~~~~~~~~~~~~ Java setup ~~~~~~~~~~~~~
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: '21'
+          cache: 'gradle'
+      - name: Display Java version
+        run: java --version
+      
+      # ~~~~~~~~~~~~~ Build ~~~~~~~~~~~~~
+      - name: Run shadowJar
+        run: ./gradlew shadowJar -x test
+      - name: Archive Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: |
+            ./sync-to-s3-cli/build/libs/*-all.jar
+  
+  
+  # ~~~~~~~~~~~~~ Release section, only triggered for v* tags ~~~~~~~~~~~~~~~~
+
+  github-release:
+    runs-on: ubuntu-latest
+    needs: package-as-shadow-jar
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      # ~~~ Add the asset ~~~
+
+      - name: Download the binary from previous step
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: application-jar
+          path: build/libs
+      - name: Read the artifact name
+        id: downloaded_artifact
+        run: |
+          ARTIFACT_NAME=$(find ./build/libs -name "*all*" -exec basename {} \;)
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/libs/${{ steps.downloaded_artifact.outputs.artifact_name }}
+          asset_name: ${{ steps.downloaded_artifact.outputs.artifact_name }}
+          asset_content_type: application/java-archive

@@ -1,9 +1,8 @@
 package ro.ghionoiu.kmsjwt.token;
 
-import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.crypto.MacProvider;
+import io.jsonwebtoken.JwtBuilder;
+import io.jsonwebtoken.security.MacAlgorithm;
 import ro.ghionoiu.kmsjwt.key.KeyEncrypt;
 import ro.ghionoiu.kmsjwt.key.KeyOperationException;
 
@@ -12,16 +11,16 @@ import java.util.Base64;
 
 public final class JWTEncoder {
 
-    private JWTEncoder() {
-        // Utility class
-    }
+    private JWTEncoder() { }
 
     public static JwtBuilder builder(KeyEncrypt keyEncrypt) throws KeyOperationException {
-        SecretKey secretKey = MacProvider.generateKey(SignatureAlgorithm.HS256);
+        MacAlgorithm alg = Jwts.SIG.HS256; // new algorithm API
+        SecretKey secretKey = alg.key().build(); // generate a suitable HMAC key
+
         byte[] encryptedKey = keyEncrypt.encrypt(secretKey.getEncoded());
 
         return Jwts.builder()
-                .setHeaderParam("kid", Base64.getEncoder().encodeToString(encryptedKey))
-                .signWith(SignatureAlgorithm.HS256, secretKey);
+                .header().add("kid", Base64.getEncoder().encodeToString(encryptedKey)).and()
+                .signWith(secretKey, alg);
     }
 }

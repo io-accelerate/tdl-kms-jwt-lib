@@ -76,7 +76,7 @@ class KMSEncryptDecryptTest {
                 KeyOperationException.class,
                 () -> kmsDecrypt.decrypt(new byte[0])
         );
-        assertThat(ex.getMessage(), containsString("ValidationException"));
+        assertThat(ex.getMessage(), containsString("validation error"));
     }
 
     @Test
@@ -87,6 +87,6 @@ class KMSEncryptDecryptTest {
                 KeyOperationException.class,
                 () -> kmsEncrypt.encrypt("secret".getBytes())
         );
-        assertThat(ex.getMessage(), containsString("NotFoundException"));
+        assertThat(ex.getMessage(), containsString("Invalid keyId"));
     }
 }
