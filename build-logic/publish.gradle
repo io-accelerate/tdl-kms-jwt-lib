@@ -6,9 +6,9 @@ publishing {
         release(MavenPublication) {
             from components.java
             pom {
-                name = 'Java client for TDL system'
-                description = 'A Java client that allows users to get up to speed with the TDL system.'
-                url = 'https://github.com/io-accelerate/trk-sync-to-s3'
+                name = 'A library to create KMS signed JWT token'
+                description = 'A library to create KMS signed JWT token'
+                url = 'https://github.com/io-accelerate/tdl-kms-jwt-lib'
                 licenses {
                     license {
                         name = 'Apache License, Version 2.0'
@@ -24,9 +24,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:git@github.com:io-accelerate/trk-sync-to-s3.git'
-                    developerConnection = 'scm:git:git@github.com:io-accelerate/trk-sync-to-s3.git'
-                    url = 'git@github.com:io-accelerate/trk-sync-to-s3.git'
+                    connection = 'scm:git:git@github.com:io-accelerate/tdl-kms-jwt-lib.git'
+                    developerConnection = 'scm:git:git@github.com:io-accelerate/tdl-kms-jwt-lib.git'
+                    url = 'git@github.com:io-accelerate/tdl-kms-jwt-lib.git'
                 }
             }
         }
