@@ -1,14 +1,17 @@
 package ro.ghionoiu.kmsjwt.key;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.CreateKeyResponse;
 
+import java.net.URI;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -16,19 +19,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class KMSEncryptDecryptTest {
-    private static final String TEST_AWS_REGION = Optional.ofNullable(System.getenv("TEST_AWS_REGION"))
-            .orElse("eu-west-2");
+    private static final String TEST_AWS_ENDPOINT = "http://localhost:4566";
+    private static final String TEST_AWS_REGION = "eu-west-2"; // LocalStack default
+    private static final String TEST_ACCESS_KEY_ID = "test";
+    private static final String TEST_SECRET_KEY = "test";
 
-    private static final String TEST_AWS_KEY_ARN = Optional.ofNullable(System.getenv("TEST_AWS_KEY_ARN"))
-            .orElse("arn:aws:kms:eu-west-2:577770582757:key/7298331e-c199-4e15-9138-906d1c3d9363");
-
+    private static String TEST_AWS_KEY_ARN;
     private static KmsClient KMS_CLIENT;
 
     @BeforeAll
     static void setUp() {
+        // Build KMS client for LocalStack
         KMS_CLIENT = KmsClient.builder()
+                .endpointOverride(URI.create(TEST_AWS_ENDPOINT))
                 .region(Region.of(TEST_AWS_REGION))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(TEST_ACCESS_KEY_ID, TEST_SECRET_KEY)))
                 .build();
+
+        // Create a new key
+        CreateKeyResponse createKeyResponse = KMS_CLIENT.createKey();
+        TEST_AWS_KEY_ARN = createKeyResponse.keyMetadata().arn();
+        System.out.println("Created test key: " + TEST_AWS_KEY_ARN);
     }
 
     @AfterAll
@@ -76,7 +88,7 @@ class KMSEncryptDecryptTest {
                 KeyOperationException.class,
                 () -> kmsDecrypt.decrypt(new byte[0])
         );
-        assertThat(ex.getMessage(), containsString("validation error"));
+        assertThat(ex.getMessage(), containsString("unable to deserialize"));
     }
 
     @Test
