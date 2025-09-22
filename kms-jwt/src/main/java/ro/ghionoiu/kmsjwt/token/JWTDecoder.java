@@ -2,6 +2,7 @@ package ro.ghionoiu.kmsjwt.token;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Locator;
@@ -23,8 +24,15 @@ public class JWTDecoder {
     }
 
     public Claims decodeAndVerify(String jwt) throws JWTVerificationException {
+        if (jwt == null || jwt.isBlank()) {
+            throw new JWTVerificationException("JWT value is empty", null);
+        }
         try {
             return jwtParser.parseSignedClaims(jwt).getPayload();
+        } catch (IllegalArgumentException e) {
+            throw new JWTVerificationException(e.getMessage(), e);
+        } catch (JwtException e) {
+            throw new JWTVerificationException("Unable to read JSON Web Token: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new JWTVerificationException(e.getMessage(), e);
         }
@@ -45,7 +53,6 @@ public class JWTDecoder {
             }
             try {
                 byte[] decrypted = keyDecrypt.decrypt(Base64.getDecoder().decode(kid));
-                // Create HS256 verification key from raw bytes (non-deprecated API)
                 return Keys.hmacShaKeyFor(decrypted);
             } catch (KeyOperationException e) {
                 throw new IllegalArgumentException("Key decryption failed", e);

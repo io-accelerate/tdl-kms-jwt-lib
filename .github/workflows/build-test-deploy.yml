@@ -8,27 +8,17 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: kms
+          DEBUG: 1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
-      # ~~~~~~~~~~~~~ Start minio ~~~~~~~~~~~~~
-      - name: Launch MinIO
-        run: |
-          docker run -d -p 9000:9000 --rm \
-            -e "MINIO_ROOT_USER=minio_access_key" \
-            -e "MINIO_ROOT_PASSWORD=minio_secret_key" \
-            minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
-          
-          # Wait for HTTP to respond (old builds have no /minio/health/*)
-          for i in {1..60}; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/ || true)
-            if [ "$code" = "200" ] || [ "$code" = "403" ] || [ "$code" = "405" ]; then
-              echo "MinIO is up with HTTP $code"
-              break
-            fi
-            sleep 1
-          done
 
       # ~~~~~~~~~~~~~ Java setup ~~~~~~~~~~~~~
       - name: Set up Java
@@ -39,7 +29,7 @@ jobs:
           cache: 'gradle'
       - name: Display Java version
         run: java --version
-      
+
       # ~~~~~~~~~~~~~ Test ~~~~~~~~~~~~~
       - name: Run gradle tests
         run: ./gradlew test -i
@@ -51,7 +41,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       # ~~~~~~~~~~~~~ Java setup ~~~~~~~~~~~~~
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -61,7 +51,7 @@ jobs:
           cache: 'gradle'
       - name: Display Java version
         run: java --version
-      
+
       # ~~~~~~~~~~~~~ Build ~~~~~~~~~~~~~
       - name: Run shadowJar
         run: ./gradlew shadowJar -x test
@@ -70,9 +60,8 @@ jobs:
         with:
           name: application-jar
           path: |
-            ./sync-to-s3-cli/build/libs/*-all.jar
-  
-  
+            ./kms-jwt-cli/build/libs/*-all.jar
+
   # ~~~~~~~~~~~~~ Release section, only triggered for v* tags ~~~~~~~~~~~~~~~~
 
   github-release:
@@ -92,8 +81,6 @@ jobs:
           release_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
-
-      # ~~~ Add the asset ~~~
 
       - name: Download the binary from previous step
         id: download

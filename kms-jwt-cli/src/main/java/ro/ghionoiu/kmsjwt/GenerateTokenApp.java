@@ -8,9 +8,12 @@ import ro.ghionoiu.kmsjwt.key.KMSEncrypt;
 import ro.ghionoiu.kmsjwt.key.KeyOperationException;
 import ro.ghionoiu.kmsjwt.token.JWTEncoder;
 import ro.ghionoiu.kmsjwt.token.JWTVerificationException;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kms.KmsClient;
 
+import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
@@ -19,7 +22,10 @@ public class GenerateTokenApp {
 
     private static final Logger log = LoggerFactory.getLogger(GenerateTokenApp.class);
 
-    @Parameter(names = {"-r", "--region"}, description = "The region where the bucket lives", required = true)
+    @Parameter(names = {"-e", "--endpoint"}, description = "Optional KMS endpoint override (e.g. http://localhost:4566)")
+    private String endpoint;
+    
+    @Parameter(names = {"-r", "--region"}, description = "The region where the KMS key lives", required = true)
     private String region;
 
     @Parameter(names = {"-k", "--key"}, description = "The ARN of the key to be used", required = true)
@@ -44,11 +50,20 @@ public class GenerateTokenApp {
     }
 
     private String generateJWT() throws KeyOperationException {
-        log.info("Generating JWT for user \"{}\" with journey \"{}\", valid for {} days", username, journey, expiresInDays);
+        log.info("Generating JWT for user \"{}\" with journey \"{}\", valid for {} days",
+                username, journey, expiresInDays);
 
-        try (KmsClient kmsClient = KmsClient.builder()
-                .region(Region.of(region))
-                .build()) {
+        var builder = KmsClient.builder()
+                .region(Region.of(region));
+
+        if (endpoint != null && !endpoint.isBlank()) {
+            builder = builder.endpointOverride(URI.create(endpoint))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test", "test")));
+            log.info("Using custom KMS endpoint: {}", endpoint);
+        }
+
+        try (KmsClient kmsClient = builder.build()) {
             KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, keyARN);
             Date expiryDate = expirationDate(expiresInDays);
             return JWTEncoder.builder(kmsEncrypt)
