@@ -1,10 +1,10 @@
-package ro.ghionoiu.kmsjwt.token;
+package io.accelerate.auth.kmsjwt.token;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.security.MacAlgorithm;
-import ro.ghionoiu.kmsjwt.key.KeyEncrypt;
-import ro.ghionoiu.kmsjwt.key.KeyOperationException;
+import io.accelerate.auth.kmsjwt.key.KeyEncrypt;
+import io.accelerate.auth.kmsjwt.key.KeyOperationException;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;

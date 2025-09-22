@@ -1,11 +1,11 @@
-package ro.ghionoiu.kmsjwt;
+package io.accelerate.auth.kmsjwt;
 
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import ro.ghionoiu.kmsjwt.key.KMSDecrypt;
-import ro.ghionoiu.kmsjwt.token.JWTDecoder;
+import io.accelerate.auth.kmsjwt.key.KMSDecrypt;
+import io.accelerate.auth.kmsjwt.token.JWTDecoder;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;

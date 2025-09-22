@@ -1,11 +1,11 @@
-package ro.ghionoiu.kmsjwt.token;
+package io.accelerate.auth.kmsjwt.token;
 
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ro.ghionoiu.kmsjwt.key.DummyKeyProtection;
-import ro.ghionoiu.kmsjwt.key.KeyDecrypt;
-import ro.ghionoiu.kmsjwt.key.KeyOperationException;
+import io.accelerate.auth.kmsjwt.key.DummyKeyProtection;
+import io.accelerate.auth.kmsjwt.key.KeyDecrypt;
+import io.accelerate.auth.kmsjwt.key.KeyOperationException;
 
 import java.nio.charset.StandardCharsets;
 

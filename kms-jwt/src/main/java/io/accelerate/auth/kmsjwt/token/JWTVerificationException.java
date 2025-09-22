@@ -1,4 +1,4 @@
-package ro.ghionoiu.kmsjwt.token;
+package io.accelerate.auth.kmsjwt.token;
 
 public class JWTVerificationException extends Exception {
     JWTVerificationException(String message, Exception e) {

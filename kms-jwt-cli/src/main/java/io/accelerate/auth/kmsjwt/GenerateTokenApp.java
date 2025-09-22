@@ -1,13 +1,13 @@
-package ro.ghionoiu.kmsjwt;
+package io.accelerate.auth.kmsjwt;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ro.ghionoiu.kmsjwt.key.KMSEncrypt;
-import ro.ghionoiu.kmsjwt.key.KeyOperationException;
-import ro.ghionoiu.kmsjwt.token.JWTEncoder;
-import ro.ghionoiu.kmsjwt.token.JWTVerificationException;
+import io.accelerate.auth.kmsjwt.key.KMSEncrypt;
+import io.accelerate.auth.kmsjwt.key.KeyOperationException;
+import io.accelerate.auth.kmsjwt.token.JWTEncoder;
+import io.accelerate.auth.kmsjwt.token.JWTVerificationException;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;

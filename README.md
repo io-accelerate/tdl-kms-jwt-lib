@@ -117,7 +117,7 @@ Run the local tests
 ```bash
 ./gradlew shadowJar
 java -Dlogback.configurationFile=`pwd`/logback.xml  \
-    -jar ./build/libs/kms-jwt-0.0.3-SNAPSHOT-all.jar \
+    -jar ./kms-jwt-cli/build/libs/kms-jwt-cli-0.0.5-all.jar \
     --region eu-west-2 \
     --key arn:aws:kms:eu-west-2:577770582757:key/7298331e-c199-4e15-9138-906d1c3d9363 \
     --username testuser \

@@ -1,4 +1,4 @@
-package ro.ghionoiu.kmsjwt.key;
+package io.accelerate.auth.kmsjwt.key;
 
 public class KeyOperationException extends Exception {
     public KeyOperationException(String message) {

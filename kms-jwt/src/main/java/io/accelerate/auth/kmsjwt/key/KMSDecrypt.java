@@ -1,4 +1,4 @@
-package ro.ghionoiu.kmsjwt.key;
+package io.accelerate.auth.kmsjwt.key;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.core.exception.SdkException;

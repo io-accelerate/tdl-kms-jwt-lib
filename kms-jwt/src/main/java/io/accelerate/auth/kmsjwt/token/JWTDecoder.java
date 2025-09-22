@@ -1,4 +1,4 @@
-package ro.ghionoiu.kmsjwt.token;
+package io.accelerate.auth.kmsjwt.token;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
@@ -7,8 +7,8 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Locator;
 import io.jsonwebtoken.security.Keys;
-import ro.ghionoiu.kmsjwt.key.KeyDecrypt;
-import ro.ghionoiu.kmsjwt.key.KeyOperationException;
+import io.accelerate.auth.kmsjwt.key.KeyDecrypt;
+import io.accelerate.auth.kmsjwt.key.KeyOperationException;
 
 import java.security.Key;
 import java.util.Base64;

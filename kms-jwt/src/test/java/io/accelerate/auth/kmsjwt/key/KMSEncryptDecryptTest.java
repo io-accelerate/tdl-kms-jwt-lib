@@ -1,4 +1,4 @@
-package ro.ghionoiu.kmsjwt.key;
+package io.accelerate.auth.kmsjwt.key;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
