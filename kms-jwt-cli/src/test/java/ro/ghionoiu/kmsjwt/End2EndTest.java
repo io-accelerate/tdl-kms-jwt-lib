@@ -1,12 +1,13 @@
 package ro.ghionoiu.kmsjwt;
 
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import io.jsonwebtoken.Claims;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import ro.ghionoiu.kmsjwt.key.KMSDecrypt;
 import ro.ghionoiu.kmsjwt.token.JWTDecoder;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kms.KmsClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -22,13 +23,20 @@ class End2EndTest {
     private static final String TEST_AWS_KEY_ARN = Optional.ofNullable(System.getenv("TEST_AWS_KEY_ARN"))
             .orElse("arn:aws:kms:eu-west-2:577770582757:key/7298331e-c199-4e15-9138-906d1c3d9363");
 
-    private static AWSKMS KMS_CLIENT;
+    private static KmsClient KMS_CLIENT;
 
     @BeforeAll
     static void setUp() {
-        KMS_CLIENT = AWSKMSClientBuilder.standard()
-                .withRegion(TEST_AWS_REGION)
+        KMS_CLIENT = KmsClient.builder()
+                .region(Region.of(TEST_AWS_REGION))
                 .build();
+    }
+
+    @AfterAll
+    static void tearDown() {
+        if (KMS_CLIENT != null) {
+            KMS_CLIENT.close();
+        }
     }
 
     @Test

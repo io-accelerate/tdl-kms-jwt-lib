@@ -1,31 +1,33 @@
 package ro.ghionoiu.kmsjwt.key;
 
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.model.EncryptRequest;
-import com.amazonaws.services.kms.model.EncryptResult;
-
-import java.nio.ByteBuffer;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.EncryptRequest;
+import software.amazon.awssdk.services.kms.model.EncryptResponse;
 
 public class KMSEncrypt implements KeyEncrypt {
-    private final AWSKMS kmsClient;
+    private final KmsClient kmsClient;
     private final String keyARN;
 
-    public KMSEncrypt(AWSKMS kmsClient, String keyARN) {
+    public KMSEncrypt(KmsClient kmsClient, String keyARN) {
         this.kmsClient = kmsClient;
         this.keyARN = keyARN;
     }
 
     public byte[] encrypt(byte[] plaintext) throws KeyOperationException {
-        EncryptRequest req = new EncryptRequest().withKeyId(keyARN)
-                .withPlaintext(ByteBuffer.wrap(plaintext));
+        EncryptRequest req = EncryptRequest.builder()
+                .keyId(keyARN)
+                .plaintext(SdkBytes.fromByteArray(plaintext))
+                .build();
 
-        EncryptResult encrypt;
+        EncryptResponse encrypt;
         try {
             encrypt = kmsClient.encrypt(req);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             throw new KeyOperationException(e.getMessage(), e);
         }
 
-        return encrypt.getCiphertextBlob().array();
+        return encrypt.ciphertextBlob().asByteArray();
     }
 }

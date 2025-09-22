@@ -44,28 +44,30 @@ For more info on IAM policies go to: http://docs.aws.amazon.com/kms/latest/devel
 ### To generate token
 
 ```java
-    AWSKMS kmsClient = AWSKMSClientBuilder.standard()
-            .withRegion(region)
-            .build();
-    KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, keyARN);
+    try (KmsClient kmsClient = KmsClient.builder()
+            .region(Region.of(region))
+            .build()) {
+        KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, keyARN);
 
-    String jwt = JWTEncoder.builder(kmsEncrypt)
-            .claim("usr", username)
-            .claim("jrn", journey)
-            .compact();
-    System.out.println(jwt);
+        String jwt = JWTEncoder.builder(kmsEncrypt)
+                .claim("usr", username)
+                .claim("jrn", journey)
+                .compact();
+        System.out.println(jwt);
+    }
 ```
 
 ### To validate token
 
 ```java
-    AWSKMS kmsClient = AWSKMSClientBuilder.standard()
-            .withRegion(region)
-            .build();
-    KMSDecrypt kmsDecrypt = new KMSDecrypt(kmsClient, Collections.singleton(keyARN));
+    try (KmsClient kmsClient = KmsClient.builder()
+            .region(Region.of(region))
+            .build()) {
+        KMSDecrypt kmsDecrypt = new KMSDecrypt(kmsClient, Collections.singleton(keyARN));
 
-    Claims claims = new JWTDecoder(kmsDecrypt).decodeAndVerify(jwt);
-    System.out.println(claims.get("usr"));
+        Claims claims = new JWTDecoder(kmsDecrypt).decodeAndVerify(jwt);
+        System.out.println(claims.get("usr"));
+    }
 ```
 
 ## Development

@@ -1,38 +1,39 @@
 package ro.ghionoiu.kmsjwt.key;
 
-import com.amazonaws.services.kms.AWSKMS;
-import com.amazonaws.services.kms.model.DecryptRequest;
-import com.amazonaws.services.kms.model.DecryptResult;
-
-import java.nio.ByteBuffer;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+import software.amazon.awssdk.services.kms.model.DecryptResponse;
 import java.util.Set;
 
 public class KMSDecrypt implements KeyDecrypt {
-    private final AWSKMS kmsClient;
+    private final KmsClient kmsClient;
     private final Set<String> supportedKeyARNs;
 
-    public KMSDecrypt(AWSKMS kmsClient, Set<String> supportedKeyARNs) {
+    public KMSDecrypt(KmsClient kmsClient, Set<String> supportedKeyARNs) {
         this.kmsClient = kmsClient;
         this.supportedKeyARNs = supportedKeyARNs;
     }
 
     public byte[] decrypt(byte[] ciphertext) throws KeyOperationException {
-        DecryptRequest req = new DecryptRequest()
-                .withCiphertextBlob(ByteBuffer.wrap(ciphertext));
+        DecryptRequest req = DecryptRequest.builder()
+                .ciphertextBlob(SdkBytes.fromByteArray(ciphertext))
+                .build();
 
-        DecryptResult decrypt;
+        DecryptResponse decrypt;
         try {
             decrypt = kmsClient.decrypt(req);
-        } catch (Exception e) {
+        } catch (SdkException e) {
             throw new KeyOperationException(e.getMessage(), e);
         }
 
-        String keyId = decrypt.getKeyId();
+        String keyId = decrypt.keyId();
         if (!supportedKeyARNs.contains(keyId)){
             throw new KeyOperationException("Ciphertext signed by unexpected key");
         }
 
-        return decrypt.getPlaintext().array();
+        return decrypt.plaintext().asByteArray();
     }
 
 }

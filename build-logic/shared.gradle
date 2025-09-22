@@ -20,7 +20,10 @@ ext {
 
 dependencies {
     implementation 'io.jsonwebtoken:jjwt:0.7.0'
-    implementation 'com.amazonaws:aws-java-sdk-kms:1.11.138'
+    implementation('software.amazon.awssdk:s3:'+awsSdkVersion)
+    implementation('software.amazon.awssdk:auth:'+awsSdkVersion)
+    implementation('software.amazon.awssdk:regions:'+awsSdkVersion)
+    implementation('software.amazon.awssdk:kms:'+awsSdkVersion)
     
     implementation 'org.slf4j:slf4j-api:2.0.12'
     implementation 'ch.qos.logback:logback-classic:1.5.13'
