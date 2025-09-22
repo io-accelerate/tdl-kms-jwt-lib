@@ -8,7 +8,7 @@ plugins {
 }
 
 application {
-    mainClass = "io.accelerate.tracking.sync.GenerateTokenApp"
+    mainClass = "io.accelerate.auth.kmsjwt.GenerateTokenApp"
 }
 
 apply from: project(':build-logic').file('shared.gradle')
