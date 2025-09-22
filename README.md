@@ -1,14 +1,17 @@
 
 A Java library to sign and verify JSON Web Tokens (JWT) using Amazon Key Management Service (KMS)
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.accelerate/kms-jwt)](https://central.sonatype.com/artifact/io.accelerate/kms-jwt)
+[![Java](https://img.shields.io/badge/Java-21%2B-blue)](build-logic/shared.gradle)
 Inspired by **codahale/kmssig** https://github.com/codahale/kmssig
 
 Token generation:
 * You construct a JWT with your claims
-* The JWT is signed with the **HS256** algorithm using a newly generated symmetric key  
-* The symmetric is encrypted using **KMS** and shared with the client as a JWT Header parameter (`kid`)
+* The JWT is signed with the **HS256** algorithm using a newly generated symmetric key
+* The symmetric key is encrypted using **KMS** and shared with the client as a JWT Header parameter (`kid`)
 
 Token validation:
-* The header file is read and the encrypted key is extracted from the `kid` parameter
+* The JWT header is read and the encrypted key is extracted from the `kid` parameter
 * A call is made to **KMS** to decrypt the encrypted key
 * The decrypted key is then used to validate the JWT signature
 
@@ -84,7 +87,7 @@ docker run -d --rm \
   localstack/localstack:4.8.1
 ```
 
-Minio can be accessed via the normal AWS client
+The emulated KMS instance exposed by Localstack can be accessed via the normal AWS client
 ```shell
 export AWS_ACCESS_KEY_ID=test
 export AWS_SECRET_ACCESS_KEY=test
@@ -111,7 +114,7 @@ Run the local tests
 ### Build and run as command-line app
 
 ```bash
-./gradlew shadowJar
+./gradlew :kms-jwt-cli:shadowJar
 java -Dlogback.configurationFile=`pwd`/logback.xml  \
     -jar ./kms-jwt-cli/build/libs/kms-jwt-cli-0.0.5-all.jar \
     --region eu-west-2 \
