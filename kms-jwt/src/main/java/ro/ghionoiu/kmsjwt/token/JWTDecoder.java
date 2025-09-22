@@ -5,8 +5,8 @@ import ro.ghionoiu.kmsjwt.key.KeyDecrypt;
 import ro.ghionoiu.kmsjwt.key.KeyOperationException;
 
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
+import java.util.Base64;
 
 public class JWTDecoder {
     private final JwtParser jwtParser;
@@ -29,7 +29,7 @@ public class JWTDecoder {
     }
 
     private static final class DecryptSigningKeyUsingKID extends SigningKeyResolverAdapter {
-        private KeyDecrypt keyDecrypt;
+        private final KeyDecrypt keyDecrypt;
 
         DecryptSigningKeyUsingKID(KeyDecrypt keyDecrypt) {
             this.keyDecrypt = keyDecrypt;
@@ -44,9 +44,9 @@ public class JWTDecoder {
 
             byte[] key;
             try {
-                key = keyDecrypt.decrypt(DatatypeConverter.parseBase64Binary(keyIdBase64));
+                key = keyDecrypt.decrypt(Base64.getDecoder().decode(keyIdBase64));
             } catch (KeyOperationException e) {
-                throw new IllegalArgumentException("Key decryption failed");
+                throw new IllegalArgumentException("Key decryption failed", e);
             }
 
             return new SecretKeySpec(key, SignatureAlgorithm.HS256.getJcaName());

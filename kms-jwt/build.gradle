@@ -1,0 +1,10 @@
+plugins {
+    // Ref here: https://docs.gradle.org/8.6/userguide/publishing_setup.html
+    id('java-library')
+    id('signing')
+    id('maven-publish')
+    id('idea')
+}
+
+apply from: project(':build-logic').file('shared.gradle')
+apply from: project(':build-logic').file('publish.gradle')

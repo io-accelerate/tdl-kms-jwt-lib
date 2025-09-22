@@ -8,12 +8,12 @@ import ro.ghionoiu.kmsjwt.key.KeyEncrypt;
 import ro.ghionoiu.kmsjwt.key.KeyOperationException;
 
 import javax.crypto.SecretKey;
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 public final class JWTEncoder {
 
     private JWTEncoder() {
-        //Utility class
+        // Utility class
     }
 
     public static JwtBuilder builder(KeyEncrypt keyEncrypt) throws KeyOperationException {
@@ -21,8 +21,7 @@ public final class JWTEncoder {
         byte[] encryptedKey = keyEncrypt.encrypt(secretKey.getEncoded());
 
         return Jwts.builder()
-                .setHeaderParam("kid", DatatypeConverter.printBase64Binary(encryptedKey))
+                .setHeaderParam("kid", Base64.getEncoder().encodeToString(encryptedKey))
                 .signWith(SignatureAlgorithm.HS256, secretKey);
     }
-
 }

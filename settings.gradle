@@ -1,1 +1,3 @@
-rootProject.name = 'kms-jwt'
+include 'build-logic'
+include 'kms-jwt-cli'
+include 'kms-jwt'

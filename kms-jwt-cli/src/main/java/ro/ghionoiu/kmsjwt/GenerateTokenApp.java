@@ -4,7 +4,8 @@ import com.amazonaws.services.kms.AWSKMS;
 import com.amazonaws.services.kms.AWSKMSClientBuilder;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ro.ghionoiu.kmsjwt.key.KMSEncrypt;
 import ro.ghionoiu.kmsjwt.key.KeyOperationException;
 import ro.ghionoiu.kmsjwt.token.JWTEncoder;
@@ -14,8 +15,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-@Slf4j
 public class GenerateTokenApp {
+
+    private static final Logger log = LoggerFactory.getLogger(GenerateTokenApp.class);
+
     @Parameter(names = {"-r", "--region"}, description = "The region where the bucket lives", required = true)
     private String region;
 
@@ -31,14 +34,13 @@ public class GenerateTokenApp {
     @Parameter(names = {"-x", "--expire-in"}, description = "The expiry period in days. Default 2 days")
     private int expiresInDays = 2;
 
-
     public static void main(String[] args) throws JWTVerificationException, KeyOperationException {
         GenerateTokenApp main = new GenerateTokenApp();
         new JCommander(main, args);
 
         String jwt = main.generateJWT();
         System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
-        System.out.println("JWT_TOKEN="+jwt);
+        System.out.println("JWT_TOKEN=" + jwt);
     }
 
     private String generateJWT() throws KeyOperationException {

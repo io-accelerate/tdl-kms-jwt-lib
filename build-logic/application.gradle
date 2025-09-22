@@ -1,0 +1,16 @@
+
+dependencies {
+    implementation 'com.beust:jcommander:1.82'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': "$application.mainClass"
+    }
+}
+
+shadowJar {
+    manifest {
+        attributes 'Main-Class': "$application.mainClass"
+    }
+}

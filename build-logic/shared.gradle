@@ -1,0 +1,50 @@
+
+group = 'io.accelerate'
+version = project.version.toString()
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+ext {
+    awsSdkVersion = '2.20.7'
+}
+
+dependencies {
+    implementation 'io.jsonwebtoken:jjwt:0.7.0'
+    implementation 'com.amazonaws:aws-java-sdk-kms:1.11.138'
+    
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+    implementation 'ch.qos.logback:logback-classic:1.5.13'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.13.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:5.19.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.19.0'
+
+    testImplementation 'commons-io:commons-io:2.20.0'
+}
+
+
+
+// Suppress Javadoc warnings
+javadoc {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty("cucumber.junit-platform.naming-strategy", "long")
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}

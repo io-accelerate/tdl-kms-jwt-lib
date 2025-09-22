@@ -1,0 +1,21 @@
+plugins {
+    id('java')
+    id('application')
+    id('java-library')
+    id('signing')
+    id('maven-publish')
+    id('com.github.johnrengelman.shadow') version '8.1.1'
+}
+
+application {
+    mainClass = "io.accelerate.tracking.sync.GenerateTokenApp"
+}
+
+apply from: project(':build-logic').file('shared.gradle')
+apply from: project(':build-logic').file('application.gradle')
+apply from: project(':build-logic').file('publish.gradle')
+
+dependencies {
+    implementation(project(':kms-jwt'))
+}
+
