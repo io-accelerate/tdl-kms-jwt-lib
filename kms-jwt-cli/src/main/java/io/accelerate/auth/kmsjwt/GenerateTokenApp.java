@@ -2,11 +2,17 @@ package io.accelerate.auth.kmsjwt;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.Parameters;
+import io.accelerate.auth.kmsjwt.key.KMSDecrypt;
 import io.accelerate.auth.kmsjwt.key.KMSEncrypt;
 import io.accelerate.auth.kmsjwt.key.KeyOperationException;
+import io.accelerate.auth.kmsjwt.token.JWTDecoder;
 import io.accelerate.auth.kmsjwt.token.JWTEncoder;
+import io.accelerate.auth.kmsjwt.token.JWTVerificationException;
+import io.jsonwebtoken.Claims;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -16,6 +22,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Set;
 
 public class GenerateTokenApp {
 
@@ -23,35 +30,104 @@ public class GenerateTokenApp {
 
     @Parameter(names = {"-e", "--endpoint"}, description = "Optional KMS endpoint override (e.g. http://localhost:4566)")
     private String endpoint;
-    
-    @Parameter(names = {"-r", "--region"}, description = "The region where the KMS key lives", required = true)
-    private String region;
 
-    @Parameter(names = {"-k", "--key"}, description = "The ARN of the key to be used", required = true)
-    private String keyARN;
+    private final GenerateCommand generate = new GenerateCommand();
+    private final ValidateCommand validate = new ValidateCommand();
 
-    @Parameter(names = {"-u", "--username"}, description = "Unique username. Should not contain names.", required = true)
-    private String username;
-
-    @Parameter(names = {"-j", "--journey"}, description = "The journey associated to this user", required = true)
-    private String journey;
-
-    @Parameter(names = {"-x", "--expire-in"}, description = "The expiry period in days. Default 2 days")
-    private int expiresInDays = 2;
-
-    public static void main(String[] args) throws KeyOperationException {
-        GenerateTokenApp main = new GenerateTokenApp();
-        new JCommander(main, args);
-
-        String jwt = main.generateJWT();
-        System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
-        System.out.println("JWT_TOKEN=" + jwt);
+    public static void main(String[] args) {
+        int exitCode = new GenerateTokenApp().execute(args);
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
     }
 
-    private String generateJWT() throws KeyOperationException {
-        log.info("Generating JWT for user \"{}\" with journey \"{}\", valid for {} days",
-                username, journey, expiresInDays);
+    private int execute(String[] args) {
+        JCommander commander = JCommander.newBuilder()
+                .addObject(this)
+                .addCommand("generate", generate)
+                .addCommand("validate", validate)
+                .programName("kms-jwt-cli")
+                .build();
 
+        if (args.length == 0) {
+            commander.usage();
+            return 1;
+        }
+
+        try {
+            commander.parse(args);
+        } catch (ParameterException e) {
+            log.error(e.getMessage());
+            commander.usage();
+            return 1;
+        }
+
+        String parsedCommand = commander.getParsedCommand();
+        if (parsedCommand == null) {
+            commander.usage();
+            return 1;
+        }
+
+        try {
+            return switch (parsedCommand) {
+                case "generate" -> {
+                    handleGenerate();
+                    yield 0;
+                }
+                case "validate" -> {
+                    handleValidate();
+                    yield 0;
+                }
+                default -> {
+                    commander.usage();
+                    yield 1;
+                }
+            };
+        } catch (KeyOperationException | JWTVerificationException e) {
+            log.error(e.getMessage());
+            return 1;
+        }
+    }
+
+    private void handleGenerate() throws KeyOperationException {
+        log.info("Generating JWT for user \"{}\" with journey \"{}\", valid for {} days",
+                generate.username, generate.journey, generate.expiresInDays);
+        try (KmsClient kmsClient = buildClient(generate.region)) {
+            KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, generate.keyArn);
+            Date expiryDate = expirationDate(generate.expiresInDays);
+            String jwt = JWTEncoder.builder(kmsEncrypt)
+                    .setExpiration(expiryDate)
+                    .claim("usr", generate.username)
+                    .claim("jrn", generate.journey)
+                    .compact();
+
+            System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
+            System.out.println("JWT_TOKEN=" + jwt);
+        }
+    }
+
+    private void handleValidate() throws KeyOperationException, JWTVerificationException {
+        log.info("Validating JWT using key \"{}\" in region \"{}\"", validate.keyArn, validate.region);
+        try (KmsClient kmsClient = buildClient(validate.region)) {
+            KMSDecrypt kmsDecrypt = new KMSDecrypt(kmsClient, Set.of(validate.keyArn));
+            JWTDecoder decoder = new JWTDecoder(kmsDecrypt);
+            Claims claims = decoder.decodeAndVerify(validate.token);
+
+            System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
+            System.out.println("JWT_VALIDATED=true");
+            printClaim(claims, "usr");
+            printClaim(claims, "jrn");
+        }
+    }
+
+    private void printClaim(Claims claims, String key) {
+        Object value = claims.get(key);
+        if (value != null) {
+            System.out.println("JWT_CLAIM_" + key + "=" + value);
+        }
+    }
+
+    private KmsClient buildClient(String region) {
         var builder = KmsClient.builder()
                 .region(Region.of(region));
 
@@ -62,18 +138,42 @@ public class GenerateTokenApp {
             log.info("Using custom KMS endpoint: {}", endpoint);
         }
 
-        try (KmsClient kmsClient = builder.build()) {
-            KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, keyARN);
-            Date expiryDate = expirationDate(expiresInDays);
-            return JWTEncoder.builder(kmsEncrypt)
-                    .setExpiration(expiryDate)
-                    .claim("usr", username)
-                    .claim("jrn", journey)
-                    .compact();
-        }
+        return builder.build();
     }
 
     private static Date expirationDate(int expiresInDays) {
         return new Date(Instant.now().plus(expiresInDays, ChronoUnit.DAYS).toEpochMilli());
+    }
+
+    @Parameters(commandDescription = "Generate a JWT token")
+    private static class GenerateCommand {
+
+        @Parameter(names = {"-r", "--region"}, description = "The region where the KMS key lives", required = true)
+        private String region;
+
+        @Parameter(names = {"-k", "--key"}, description = "The ARN of the key to be used", required = true)
+        private String keyArn;
+
+        @Parameter(names = {"-u", "--username"}, description = "Unique username. Should not contain names.", required = true)
+        private String username;
+
+        @Parameter(names = {"-j", "--journey"}, description = "The journey associated to this user", required = true)
+        private String journey;
+
+        @Parameter(names = {"-x", "--expire-in"}, description = "The expiry period in days. Default 2 days")
+        private int expiresInDays = 2;
+    }
+
+    @Parameters(commandDescription = "Validate a JWT token")
+    private static class ValidateCommand {
+
+        @Parameter(names = {"-r", "--region"}, description = "The region where the KMS key lives", required = true)
+        private String region;
+
+        @Parameter(names = {"-k", "--key"}, description = "An allowed KMS key ARN", required = true)
+        private String keyArn;
+
+        @Parameter(names = {"-t", "--token"}, description = "JWT token value to validate", required = true)
+        private String token;
     }
 }

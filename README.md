@@ -79,31 +79,13 @@ https://cwiki.apache.org/confluence/display/STONEHENGE/Installing+Java+Cryptogra
 
 Start Localstack as a container
 ```shell
-docker run -d --rm \
-  --name localstack \
-  -p 4566:4566 \
-  -e SERVICES=kms \
-  -e DEBUG=1 \
-  localstack/localstack:4.8.1
+./localstack/start.sh
 ```
 
-The emulated KMS instance exposed by Localstack can be accessed via the normal AWS client
+The emulated KMS instance exposed by Localstack can be accessed via the normal AWS client, see
 ```shell
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=eu-west-2
-
-# Create a test key
-aws --endpoint-url=http://localhost:4566 --region eu-west-2 \
-    kms create-key \
-    --description "LocalStack test key" \
-    --key-usage ENCRYPT_DECRYPT \
-    --origin AWS_KMS
-    
-# List keys
-aws --endpoint-url=http://localhost:4566 \
-    --region eu-west-2 \
-    kms list-keys
+./localstack/kms-create-key.sh
+./localstack/kms-list-keys.sh
 ```
 
 Run the local tests
@@ -111,16 +93,40 @@ Run the local tests
 ./gradlew test -i
 ```
 
-### Build and run as command-line app
+Stop Localstack
+```
+./localstack/stop.sh
+```
 
+### Build, run and test as command-line app
+
+Build the CLI jar
 ```bash
 ./gradlew :kms-jwt-cli:shadowJar
-java -Dlogback.configurationFile=`pwd`/logback.xml  \
-    -jar ./kms-jwt-cli/build/libs/kms-jwt-cli-0.0.5-all.jar \
+```
+
+Manually invoke
+```shell
+java -jar ./kms-jwt-cli/build/libs/kms-jwt-cli-0.0.5-all.jar \
+    generate \
     --region eu-west-2 \
     --key arn:aws:kms:eu-west-2:577770582757:key/7298331e-c199-4e15-9138-906d1c3d9363 \
-    --username testuser \
-    --journey "SUM,UPR"
+    --username testuser --journey "SUM,UPR"    
+```
+
+Run all manual acceptance tests - uses real creds and real AWS
+```shell
+manual-acceptance/run.sh
+```
+
+Run one manual acceptance test
+```shell
+manual-acceptance/run.sh 10-generate-token.sh
+```
+
+Approve all snapshots
+```shell
+UPDATE_SNAPSHOTS=1 manual-acceptance/run.sh
 ```
 
 

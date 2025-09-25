@@ -1,0 +1,5 @@
+INFO  i.a.auth.kmsjwt.GenerateTokenApp - Validating JWT using key "arn:aws:kms:eu-west-2::key/7298331e-c199-4e15-9138-906d1c3d9363" in region "eu-west-2"
+~~~~~~~~~~~~~~~~~~~~~~~
+JWT_VALIDATED=true
+JWT_CLAIM_usr=testuser
+JWT_CLAIM_jrn=SUM,UPR

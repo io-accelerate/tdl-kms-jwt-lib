@@ -2,3 +2,6 @@
 .gradle/
 .private/
 build/
+
+# Acceptance tests
+manual-acceptance/artifacts/

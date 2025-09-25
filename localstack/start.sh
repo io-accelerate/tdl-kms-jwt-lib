@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+docker run -d --rm \
+  --name localstack \
+  -p 4566:4566 \
+  -e SERVICES=kms \
+  -e DEBUG=1 \
+  localstack/localstack:4.8.1
+
+echo "LocalStack started with KMS on http://localhost:4566"
