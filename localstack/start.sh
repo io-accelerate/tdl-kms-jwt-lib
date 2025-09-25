@@ -4,7 +4,7 @@ set -euo pipefail
 docker run -d --rm \
   --name localstack \
   -p 4566:4566 \
-  -e SERVICES=kms \
+  -e SERVICES=iam,sts,s3,kms \
   -e DEBUG=1 \
   localstack/localstack:4.8.1
 
