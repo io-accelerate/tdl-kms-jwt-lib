@@ -21,12 +21,17 @@ import software.amazon.awssdk.services.kms.KmsClient;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GenerateTokenApp {
 
     private static final Logger log = LoggerFactory.getLogger(GenerateTokenApp.class);
+    private static final String WARMUP_CHALLENGES_CLAIM = "tdl_wrm";
+    private static final String OFFICIAL_CHALLENGE_CLAIM = "tdl_chx";
 
     @Parameter(names = {"-e", "--endpoint"}, description = "Optional KMS endpoint override (e.g. http://localhost:4566)")
     private String endpoint;
@@ -83,7 +88,7 @@ public class GenerateTokenApp {
                     yield 1;
                 }
             };
-        } catch (KeyOperationException | JWTVerificationException e) {
+        } catch (KeyOperationException | JWTVerificationException | IllegalArgumentException e) {
             log.error(e.getMessage());
             return 1;
         }
@@ -95,10 +100,12 @@ public class GenerateTokenApp {
         try (KmsClient kmsClient = buildClient(generate.region)) {
             KMSEncrypt kmsEncrypt = new KMSEncrypt(kmsClient, generate.keyArn);
             Date expiryDate = expirationDate(generate.expiresInDays);
+            JourneyClaims journeyClaims = splitJourney(generate.journey);
             String jwt = JWTEncoder.builder(kmsEncrypt)
                     .setExpiration(expiryDate)
                     .claim("usr", generate.username)
-                    .claim("jrn", generate.journey)
+                    .claim(WARMUP_CHALLENGES_CLAIM, journeyClaims.warmupChallenges())
+                    .claim(OFFICIAL_CHALLENGE_CLAIM, journeyClaims.officialChallenge())
                     .compact();
 
             System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
@@ -116,13 +123,21 @@ public class GenerateTokenApp {
             System.out.println("~~~~~~~~~~~~~~~~~~~~~~~");
             System.out.println("JWT_VALIDATED=true");
             printClaim(claims, "usr");
-            printClaim(claims, "jrn");
+            printClaim(claims, WARMUP_CHALLENGES_CLAIM);
+            printClaim(claims, OFFICIAL_CHALLENGE_CLAIM);
         }
     }
 
     private void printClaim(Claims claims, String key) {
         Object value = claims.get(key);
         if (value != null) {
+            if (value instanceof List<?> list) {
+                String joined = list.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(","));
+                System.out.println("JWT_CLAIM_" + key + "=" + joined);
+                return;
+            }
             System.out.println("JWT_CLAIM_" + key + "=" + value);
         }
     }
@@ -143,6 +158,32 @@ public class GenerateTokenApp {
 
     private static Date expirationDate(int expiresInDays) {
         return new Date(Instant.now().plus(expiresInDays, ChronoUnit.DAYS).toEpochMilli());
+    }
+
+    private static JourneyClaims splitJourney(String journey) {
+        if (journey == null || journey.isBlank()) {
+            throw new IllegalArgumentException("Journey must contain at least one challenge");
+        }
+
+        String[] rawParts = journey.split(",");
+        List<String> parts = new ArrayList<>(rawParts.length);
+        for (String rawPart : rawParts) {
+            String trimmed = rawPart.trim();
+            if (!trimmed.isEmpty()) {
+                parts.add(trimmed);
+            }
+        }
+
+        if (parts.isEmpty()) {
+            throw new IllegalArgumentException("Journey must contain at least one challenge");
+        }
+
+        String official = parts.get(parts.size() - 1);
+        List<String> warmups = List.copyOf(parts.subList(0, parts.size() - 1));
+        return new JourneyClaims(warmups, official);
+    }
+
+    private record JourneyClaims(List<String> warmupChallenges, String officialChallenge) {
     }
 
     @Parameters(commandDescription = "Generate a JWT token")

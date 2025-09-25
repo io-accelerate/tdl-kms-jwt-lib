@@ -7,9 +7,17 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 source "${SCRIPT_DIR}/env.sh"
 source "${SCRIPT_DIR}/common.sh"
 
-KMS_JWT_CLI_JAR="$(find "${REPO_ROOT}/kms-jwt-cli/build/libs" -maxdepth 1 -name 'kms-jwt-cli-*-all.jar' -print 2>/dev/null | sort | head -n1 || true)"
-if [[ -z "${KMS_JWT_CLI_JAR}" ]]; then
-  echo "[ERROR] Shaded CLI jar not found. Build it with ./gradlew :kms-jwt-cli:shadowJar" >&2
+PROJECT_VERSION="$(awk -F= '$1=="version" {print $2}' "${REPO_ROOT}/gradle.properties" | tr -d '[:space:]')"
+if [[ -z "${PROJECT_VERSION}" ]]; then
+  echo "[ERROR] Unable to determine project version from gradle.properties" >&2
+  exit 1
+fi
+
+EXPECTED_JAR_NAME="kms-jwt-cli-${PROJECT_VERSION}-all.jar"
+KMS_JWT_CLI_JAR="${REPO_ROOT}/kms-jwt-cli/build/libs/${EXPECTED_JAR_NAME}"
+
+if [[ ! -f "${KMS_JWT_CLI_JAR}" ]]; then
+  echo "[ERROR] Expected shaded CLI jar ${EXPECTED_JAR_NAME} not found. Build it with ./gradlew :kms-jwt-cli:shadowJar" >&2
   exit 1
 fi
 

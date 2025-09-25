@@ -2,4 +2,5 @@ INFO  i.a.auth.kmsjwt.GenerateTokenApp - Validating JWT using key "arn:aws:kms:e
 ~~~~~~~~~~~~~~~~~~~~~~~
 JWT_VALIDATED=true
 JWT_CLAIM_usr=testuser
-JWT_CLAIM_jrn=SUM,UPR
+JWT_CLAIM_tdl_wrm=SUM
+JWT_CLAIM_tdl_chx=UPR
