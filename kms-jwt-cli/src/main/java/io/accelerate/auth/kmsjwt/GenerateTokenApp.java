@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import io.accelerate.auth.kmsjwt.key.KMSEncrypt;
 import io.accelerate.auth.kmsjwt.key.KeyOperationException;
 import io.accelerate.auth.kmsjwt.token.JWTEncoder;
-import io.accelerate.auth.kmsjwt.token.JWTVerificationException;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -40,7 +39,7 @@ public class GenerateTokenApp {
     @Parameter(names = {"-x", "--expire-in"}, description = "The expiry period in days. Default 2 days")
     private int expiresInDays = 2;
 
-    public static void main(String[] args) throws JWTVerificationException, KeyOperationException {
+    public static void main(String[] args) throws KeyOperationException {
         GenerateTokenApp main = new GenerateTokenApp();
         new JCommander(main, args);
 

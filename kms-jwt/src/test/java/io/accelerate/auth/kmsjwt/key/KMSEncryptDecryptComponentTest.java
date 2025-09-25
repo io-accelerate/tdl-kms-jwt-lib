@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class KMSEncryptDecryptTest {
+class KMSEncryptDecryptComponentTest {
     private static final String TEST_AWS_ENDPOINT = "http://localhost:4566";
     private static final String TEST_AWS_REGION = "eu-west-2"; // LocalStack default
     private static final String TEST_ACCESS_KEY_ID = "test";
